@@ -62,6 +62,17 @@ def _validate_signature(minion_id, signature, impersonated_by_master):
     raise salt.exceptions.AuthenticationError('Could not validate token request from {0}'.format(minion_id))
   log.trace('Signature ok')
 
+def _get_my_policies():
+  my_policies = []
+  url = '{0}/v1/auth/token/lookup-self'.format(config['url'])
+  headers = {'X-Vault-Token': config['auth']['token']}
+  response = requests.get(url, headers=headers)
+
+  if response.status_code == 200:
+    my_policies = response.json()['data']['policies']
+
+  return my_policies
+
 def _get_policies(minion_id, config):
   _, grains, _ = salt.utils.minions.get_minion_data(minion_id, __opts__)
   policyPatterns = config.get('policies', ['saltstack/minion/{minion}', 'saltstack/minions'])
@@ -72,14 +83,18 @@ def _get_policies(minion_id, config):
   #mappings = { 'minion': minion_id, 'grains': __grains__, 'pillar': minion_pillar }
   mappings = { 'minion': minion_id, 'grains': grains or {}}
 
+  my_policies = _get_my_policies()
+
   policies = []
   for pattern in policyPatterns:
     try:
       for expanded_pattern in _expand_pattern_lists(pattern, **mappings):
-        policies.append(
-                        expanded_pattern.format(**mappings)
-                                        .lower()
-                       )
+        policy = expanded_pattern.format(**mappings).lower()
+        if config.get('check_policies') and (policy in my_policies or 'root' in my_policies):
+          policies.append(policy)
+        else:
+          log.debug('{0} policy {1} ignored'.format(minion_id, policy))
+
     except KeyError:
       log.warning('Could not resolve policy pattern {0}'.format(pattern))
 

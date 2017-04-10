@@ -85,6 +85,7 @@ vault:
     - saltstack/minions
     - saltstack/minion/{minion}
     .. more policies
+  check_policies: false
 ```
 
 * `url`
@@ -113,6 +114,10 @@ vault:
 
   Optional, if `policies` is not configured, `saltstack/minions` and 
   `saltstack/{minion}` are used as defaults.
+* `check_policies`
+  If `check_policies` is true, policies not available to the master's token won't be
+  assigned to minions. This fix issues if you have a no-root token with innexistant
+  policies with expendend policies.
 
 
 ### Peer-run
