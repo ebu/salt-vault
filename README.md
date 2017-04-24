@@ -116,9 +116,8 @@ vault:
   `saltstack/{minion}` are used as defaults.
 * `check_policies`
   If `check_policies` is true, policies not available to the master's token won't be
-  assigned to minions. This fix issues if you have a no-root token with innexistant
-  policies with expendend policies.
-
+  assigned to minions. This fix issues if you have a non-root token and some policies
+  build by the `policies` option dosen't exists.
 
 ### Peer-run
 Add this segment to the master configuration file, or `/etc/salt/master.d/peer_run.conf`:
